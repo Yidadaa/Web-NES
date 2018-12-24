@@ -28,15 +28,32 @@
 
 <script>
 import { Controller, NES } from 'jsnes'
+import { loadBinary } from '../utils/request'
+import Screen from '../utils/screen'
+import Speaker from '../utils/speaker'
 
 const W = 256
 const H = 240
+const fps = 60
+const sampleRate = 44100
+const bufferLen = sampleRate / 7
 
-let nes = null
-let screenImage = new ImageData(W, H)
-let dataBuffer = new ArrayBuffer(screenImage.data.length)
-let screenBuffer8 = new Uint8ClampedArray(dataBuffer)
-let screenBuffer32 = new Uint32Array(dataBuffer)
+const audioContext = new AudioContext()
+
+let left = []
+let right = []
+let myBuffer = audioContext.createBuffer(2, bufferLen, sampleRate)
+const source = audioContext.createBufferSource()
+
+const screen = new Screen(W, H)
+const speaker = new Speaker({})
+const nes = new NES({
+  onFrame: frameBuffer => screen.onFrame(frameBuffer),
+  onAudioSample: (l, r) => {
+    left.push(l)
+    right.push(r)
+  }
+})
 
 const keyTable = {
   'w': 'up',
@@ -49,80 +66,57 @@ const keyTable = {
   'k': 'b'
 }
 
-let keyState = {
-  up: 0,
-  left: 0,
-  right: 0,
-  down: 0,
-  select: 0,
-  start: 0,
-  a: 0,
-  b: 0
-}
-
 export default {
   data () { return {} },
 
   mounted () {
-    // 开始加载游戏
-    const canvas = document.querySelector('#displayer')
-    const ctx = canvas.getContext('2d')
-    screenImage = ctx.getImageData(0, 0, W, H)
-    nes = new NES({
-      onFrame: function (frameBuffer) {
-        for (let i = 0; i < W * H; i++) {
-          screenBuffer32[i] = 0xff000000 | frameBuffer[i]
-        }
-        screenImage.data.set(screenBuffer8)
-        ctx.putImageData(screenImage, 0, 0)
-      },
-      onAudioSample: function (left, right) {}
-    })
-
-    this.loadBinary('./忍者神龟格斗.nes', (res) => {
-      nes.loadROM(res)
-      setInterval(() => {
-        Object.keys(keyTable).forEach(v => {
-          const key = Controller['BUTTON_' + keyTable[v].toUpperCase()]
-          if (keyState[keyTable[v]] === 1) {
-            nes.buttonDown(1, key)
-            console.log(keyState)
-          } else {
-            nes.buttonUp(1, key)
-          }
-        })
-        nes.frame()
-      }, 16)
-    })
-
+    this.init()
     document.onkeydown = this.onKeyDown
     document.onkeyup = this.onKeyUp
+    document.onkeypress = this.onKeypress
   },
 
   methods: {
-    loadBinary (path, callback) {
-      let req = new XMLHttpRequest()
-      req.open('GET', path)
-      req.overrideMimeType('text/plain; charset=x-user-defined')
-      req.addEventListener('load', function () {
-        if (req.status === 200) {
-          callback(this.responseText)
-        } else {
-          callback(new Error(req.statusText))
-        }
-      })
-      req.onerror = function () {
-        callback(new Error(req.statusText))
-      }
-      req.send()
-    },
     onKeyDown (e) {
-      const key = e.key
-      keyState[keyTable[key] || e.target.dataset.key] = 1
+      let key = e.key
+      key = keyTable[key] || e.target.dataset.key
+      const ckey = Controller['BUTTON_' + key.toUpperCase()]
+      nes.buttonDown(1, ckey)
     },
     onKeyUp (e) {
-      const key = e.key
-      keyState[keyTable[key] || e.target.dataset.key] = 0
+      let key = e.key
+      key = keyTable[key] || e.target.dataset.key
+      const ckey = Controller['BUTTON_' + key.toUpperCase()]
+      nes.buttonUp(1, ckey)
+    },
+    async init () {
+      // 配置显示环境
+      screen.bindScreen('#displayer')
+      const romData = await loadBinary('./马里奥兄弟.nes')
+      // 加载rom
+      nes.loadROM(romData)
+      speaker.start()
+      this.loop()
+    },
+    loop () {
+      requestAnimationFrame(() => {
+        nes.frame()
+        if (left.length >= bufferLen - 1000) {
+          if (source.buffer) {
+            source.buffer.copyToChannel(new Float32Array(left), 0, 0)
+            source.buffer.copyToChannel(new Float32Array(right), 1, 0)
+          } else {
+            myBuffer.copyToChannel(new Float32Array(left), 0, 0)
+            myBuffer.copyToChannel(new Float32Array(right), 1, 0)
+            source.buffer = myBuffer
+            source.connect(audioContext.destination)
+            source.start()
+          }
+          left = []
+          right = []
+        }
+        this.loop()
+      })
     }
   }
 }
