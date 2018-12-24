@@ -34,25 +34,12 @@ import Speaker from '../utils/speaker'
 
 const W = 256
 const H = 240
-const fps = 60
-const sampleRate = 44100
-const bufferLen = sampleRate / 7
-
-const audioContext = new AudioContext()
-
-let left = []
-let right = []
-let myBuffer = audioContext.createBuffer(2, bufferLen, sampleRate)
-const source = audioContext.createBufferSource()
 
 const screen = new Screen(W, H)
-const speaker = new Speaker({})
+const speaker = new Speaker()
 const nes = new NES({
   onFrame: frameBuffer => screen.onFrame(frameBuffer),
-  onAudioSample: (l, r) => {
-    left.push(l)
-    right.push(r)
-  }
+  onAudioSample: (l, r) => speaker.writeSampleBuffer(l, r)
 })
 
 const keyTable = {
@@ -95,26 +82,11 @@ export default {
       const romData = await loadBinary('./马里奥兄弟.nes')
       // 加载rom
       nes.loadROM(romData)
-      speaker.start()
       this.loop()
     },
     loop () {
       requestAnimationFrame(() => {
         nes.frame()
-        if (left.length >= bufferLen - 1000) {
-          if (source.buffer) {
-            source.buffer.copyToChannel(new Float32Array(left), 0, 0)
-            source.buffer.copyToChannel(new Float32Array(right), 1, 0)
-          } else {
-            myBuffer.copyToChannel(new Float32Array(left), 0, 0)
-            myBuffer.copyToChannel(new Float32Array(right), 1, 0)
-            source.buffer = myBuffer
-            source.connect(audioContext.destination)
-            source.start()
-          }
-          left = []
-          right = []
-        }
         this.loop()
       })
     }
