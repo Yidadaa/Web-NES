@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "jsnes": "^1.0.1",
+    "mobile-detect": "^1.4.3",
     "vue": "^2.5.17"
   },
   "devDependencies": {
