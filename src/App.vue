@@ -52,17 +52,13 @@ body {
 
   margin: auto;
 
-  width: 100%;
-  height: 100%;
-  max-width: 900px;
+  width: 800px;
+  height: 450px;
 }
 
 @media screen and (orientation: landscape) {
   .tip {
     display: none;
-  }
-  #app {
-    background-color: #000;
   }
 }
 
