@@ -1,5 +1,5 @@
 <template>
-  <div class="pc-player" >
+  <div :class="[isMobile ? 'mobile-player' : 'pc-player']" >
     <div class="left">
       <div class="direction-pad">
         <div class="line">
