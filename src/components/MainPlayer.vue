@@ -1,5 +1,5 @@
 <template>
-  <div id="player" >
+  <div class="mobile-player" >
     <div class="left">
       <div class="direction-pad">
         <div class="line">
@@ -10,9 +10,9 @@
         </div>
         <div class="line">
           <button class="pad-button" data-key="down" @touchstart="onKeyDown"
-            @touchend="onKeyUp">D</button>
-          <button class="pad-button" data-key="right" @touchstart="onKeyDown"
             @touchend="onKeyUp">S</button>
+          <button class="pad-button" data-key="right" @touchstart="onKeyDown"
+            @touchend="onKeyUp">D</button>
         </div>
       </div>
     </div>
@@ -29,10 +29,14 @@
     </div>
     <div class="right">
       <div class="action-pad">
-        <button class="pad-button" data-key="b" @touchstart="onKeyDown"
-          @touchend="onKeyUp">B</button>
-        <button class="pad-button" data-key="a" @touchstart="onKeyDown"
-          @touchend="onKeyUp">A</button>
+        <div class="button-wrap">
+          <button class="pad-button" data-key="b" @touchstart="onKeyDown"
+            @touchend="onKeyUp">B</button>
+        </div>
+        <div class="button-wrap">
+          <button class="pad-button" data-key="a" @touchstart="onKeyDown"
+            @touchend="onKeyUp">A</button>
+        </div>
       </div>
     </div>
   </div>
@@ -40,6 +44,8 @@
 
 <script>
 import { NES } from 'jsnes'
+import MobileDetect from 'mobile-detect'
+
 import { loadBinary } from '../utils/request'
 import Screen from '../utils/screen'
 import Speaker from '../utils/speaker'
@@ -60,7 +66,8 @@ export default {
   data () {
     return {
       width: W,
-      height: H
+      height: H,
+      isMobile: new MobileDetect(window.navigator.userAgent).mobile()
     }
   },
 
@@ -104,28 +111,29 @@ export default {
 </script>
 
 <style lang="less" scoped>
-#player {
-  height: 100%;
-  width: 100%;
+.mobile-player {
+  height: 100vh;
+  width: 100vw;
 
   color: #fff;
   background-color: #fff;
   display: flex;
   border: 1px solid #aaa;
   border-radius: 20px;
-  box-shadow: 10px 10px 0 rgb(24, 57, 74);
-  padding: 10px;
+  box-shadow: 1.5vw 1.5vw 0 rgb(24, 57, 74);
+  padding: 1.5vw;
 
   .active-animation {
+    transition: box-shadow 0.1s ease;
     &:active {
-      transform: scale(0.9);
-      box-shadow: 0;
+      box-shadow: none;
     }
   }
 
   .pad-button {
     user-select: none;
     outline: none;
+    font-size: 4vh;
   }
 
   .left {
@@ -135,23 +143,36 @@ export default {
     align-items: center;
     background-color: rgb(33, 33, 33);
     border-radius: 20px;
+    position: relative;
+
+    &:after {
+      // Model
+      content: 'NES-2000';
+      font-weight: bold;
+      font-size: 4vh;
+      color: rgb(33, 33, 33);
+      color: #505050;
+      text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+      position: absolute;
+      bottom: 4vh;
+      right: 4vw;
+    }
 
     .direction-pad {
-      height: 150px;
       transform: rotate(-45deg);
-      border-radius: 32px;
+      border-radius: 4vw;
       background-color: #eee;
-      padding: 5px;
+      padding: 0.5vw;
       .pad-button {
-        margin: 5px;
-        border-radius: 50px;
+        margin: 0.5vw;
+        border-radius: 100vw;
         background-color: rgb(73, 66, 62);
         color: rgb(73, 66, 62);
         border: 0;
-        height: 60px;
-        width: 60px;
+        height: 7.5vw;
+        width: 7.5vw;
         transform: rotate(45deg) scale(1);
-        box-shadow: 2px 1px 0 #666;
+        box-shadow: 0.8vh 0.8vh 0 rgb(138, 171, 210);
         text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
         font-weight: bold;
 
@@ -165,29 +186,35 @@ export default {
     .displayer-wrap {
       display: flex;
       justify-content: center;
+      align-items: center;
+      height: 80vh;
 
       #displayer {
-        width: 256px * 1.3;
-        height: 240px * 1.3;
+        width: 40vw;
+        height: 37.5vw;
         background-color: #fff;
         border: rgb(33, 33, 33) 20px solid;
+        border-top-color: rgb(46, 46, 46);
+        border-bottom-color: rgb(46, 46, 46);
       }
     }
     .system-pad {
+      height: 10vh;
       display: flex;
       justify-content: center;
-      margin-top: 10px;
+      align-items: center;
+      border: 1px solid #eee;
 
       .pad-button {
         background-color: rgb(73, 66, 62);
-        box-shadow: 4px 4px 0 rgb(138, 171, 210);
+        box-shadow: 0.8vh 0.8vh 0 rgb(138, 171, 210);
         border: 0;
-        margin: 10px;
-        padding: 5px 10px;
-        border-radius: 20px;
+        margin: 1.5vw;
+        padding: 0.5vw 1.5vw;
+        border-radius: 100vw;
         color: rgb(73, 66, 62);
         text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
-        width: 100px;
+        width: 10vw;
         text-align: center;
         transform: scale(1);
         .active-animation();
@@ -204,25 +231,35 @@ export default {
     justify-content: center;
 
     .action-pad {
-      // height: 100px;
-      padding: 5px;
+      padding: 0.5vw;
       width: 50%;
-      // transform: rotate(-45deg);
+
+      .button-wrap {
+        border-radius: 100vw;
+        background-color: #fff;
+        margin-bottom: 2vh;
+        height: 11vw;
+        width: 11vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
 
       .pad-button {
+        border: 0;
         background-color:rgb(163, 78, 71);
         color: rgb(163, 78, 71);
         font-weight: bold;
         text-shadow: 1px 1px rgb(105, 39, 33);
-        box-shadow: 2px 1px 0 rgb(105, 39, 33);
-        border: 8px solid #fff;
-        height: 80px;
-        width: 70px;
-        border-radius: 50px;
-        margin-bottom: 20px;
-        // transform: rotate(45deg) scale(1);
+        box-shadow: 0.8vh 0.8vh 0 rgb(138, 171, 210);
+        height: 9vw;
+        width: 9vw;
+        border-radius: 100vw;
         transform: scale(1);
-        width: 100%;
         .active-animation();
       }
     }

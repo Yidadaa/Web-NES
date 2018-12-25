@@ -39,6 +39,12 @@ export default {
 * {
   box-sizing: border-box;
 }
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -54,6 +60,9 @@ export default {
 @media screen and (orientation: landscape) {
   .tip {
     display: none;
+  }
+  #app {
+    background-color: #000;
   }
 }
 
